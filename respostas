@@ -1,0 +1,180 @@
+1) Criar uma stored procedure para apresentar os nomes e 
+datas de nascimento de clientes em um período de 
+datas(inicial e final) (P).
+create or replace procedure PClientesNascimentos(P_DataI date,P_DataF date) 
+language plpgsql as
+$$
+declare CursorClientes cursor for select c.nascimento,c.nomecliente from clientes c
+where c.nascimento>=P_DataI and c.nascimento<=P_DataF; 
+begin
+ for reg in CursorClientes
+ loop
+   raise notice '% -%',reg.nomecliente,reg.nascimento;
+ end loop;
+end;
+$$
+
+2) Criar uma stored procedure para apresentar os nomes e nascimentos de clientes classificados por ano, a implementação deverá apresentar os dados dos clientes subordinados aos respectivos anos de nascimento (P).
+create or replace procedure PClientesNascimentosAgrupados() language plpgsql as
+$$
+declare CursorAnoNascimento cursor for
+select distinct to_char(c1.nascimento,'YYYY') ano from clientes c1
+order by ano;
+
+CursorClientes cursor(PAno varchar(4)) for
+select c2.nascimento,c2.nomecliente from clientes c2
+where to_char(c2.nascimento,'YYYY')=PAno;
+begin
+ for reg_nascimentos in CursorAnoNascimento
+ loop
+   raise notice '%',reg_nascimentos.ano;
+   for reg_clientes in CursorClientes(reg_nascimentos.ano)
+   loop
+     raise notice '  % - %',reg_clientes.nomecliente,reg_clientes.nascimento; 
+   end loop;
+ end loop;
+end;
+$$
+
+3) Criar uma stored procedure para apresentar os títulos dos livros emprestados na data mais antiga e na data mais recente, crie dois cursores (P).
+create or replace procedure PEmprestimos() language plpgsql as
+$$
+declare CursorPrimeiros cursor for
+select lp.titulo from emprestimos ep,livros lp
+where ep.idlivro=lp.idlivro
+and ep.datadevolvido=(select min(e.datadevolvido) from emprestimos e);
+
+CursorUltimos cursor for
+select lp.titulo from emprestimos ep,livros lp
+where ep.idlivro=lp.idlivro
+and ep.datadevolvido=(select max(e.datadevolvido) from emprestimos e);
+begin
+-- Primeiros
+raise notice '%','Primeiros emprestimos';
+raise notice '%','----------------------';
+for dados_P in CursorPrimeiros
+loop
+  raise notice '%',dados_P.titulo;
+end loop;
+-- Ultimos
+raise notice '%','Ultimos emprestimos';
+raise notice '%','----------------------';
+for dados_U in CursorUltimos
+loop
+  raise notice '%',dados_U.titulo;
+end loop;
+end;
+$$
+
+4) Criar uma stored procedure para calcular substituir caracteres de um texto informado via parâmetro, o caracter para pesquisa e substituição também serão informados via parâmetro (F).
+create or replace function FPesquisaTexto(P_Texto varchar(80),car1 varchar(1),
+						   car2 varchar(1)) returns varchar(80) as
+$$
+declare i numeric(3);
+        aux varchar(80);
+begin
+  aux:='';
+  for i in 1..length(P_Texto)
+  loop
+    if (substring(P_Texto,i,1)=car1) then
+	  aux:=aux||car2;
+	 else
+	  aux:=aux||substring(P_Texto,i,1);
+	end if;  
+  end loop;
+  return aux;
+end;
+$$ language plpgsql;
+
+5) Criar uma stored procedure para apresentar de forma hierárquica editoras e livros em ordem ascendente (P).
+create or replace procedure PEditorasLivros() language plpgsql as
+$$
+declare
+CursorEditoras cursor for select e.ideditora,e.nomeeditora from editoras e;
+CursorLivros cursor(P_Editora numeric(5)) for 
+                   select l.titulo from livros l where l.ideditora=P_Editora;
+begin
+ for dadoseditoras in CursorEditoras
+ loop
+   raise notice '%',dadoseditoras.nomeeditora;
+   for dadoslivros in CursorLivros(dadoseditoras.ideditora)
+   loop
+     raise notice '   %',dadoslivros.titulo;
+   end loop;
+ end loop;
+end;
+$$
+
+6) Criar uma stored procedure para apresentar os produtos vendidos por faixas de valores, os valores serão informados por parâmetro (P).
+create or replace procedure PVendasProdutos(P_ValorI numeric(12,3),
+											P_ValorF numeric(12,3)) language plpgsql as
+$$
+declare CursorProdutos cursor for
+select p.descricaoproduto,p.valorproduto,v.datavenda
+from produtos p,vendas v where p.idproduto=v.idproduto
+and p.valorproduto>=P_ValorI and p.valorproduto<=P_ValorF;
+begin
+  for reg in CursorProdutos
+  loop
+    raise notice '% - % - %',reg.descricaoproduto,reg.valorproduto,reg.datavenda;
+  end loop;
+end;
+$$
+
+7) Criar uma stored procedure para apresentar os clientes em uma faixa etária determinada via parâmetros. Será apresentado o nome do cliente a data de nascimento e a idade do mesmo.
+create or replace procedure PClientesIdades(P_IdadeI numeric(3),P_IdadeF numeric(3))
+language plpgsql as
+$$
+declare CursorIdades cursor for
+select c.nomecliente,c.nascimento,(current_date-c.nascimento)/365 idade
+from clientes c
+where ((current_date-c.nascimento)/365)>=P_IdadeI 
+and ((current_date-c.nascimento)/365)<=P_IdadeF
+order by idade;
+begin
+  for dados in CursorIdades
+  loop
+    raise notice '% - % - %',dados.nomecliente,dados.nascimento,dados.idade;
+  end loop;
+end;
+$$
+
+8) Criar uma stored procedure para pesquisar a quantidade de ocorrências de uma palavra em um texto (F).
+
+create or replace function FPesquisaPalavras(P_Texto varchar(100),P_Palavra varchar(10))
+returns numeric(2) as
+$$
+declare c numeric(3);
+        ocorrencias numeric(2);
+begin
+  ocorrencias:=0;
+  for c in 1..length(P_Texto)
+  loop
+    if (substring(P_Texto,c,length(P_Palavra)) = P_Palavra) then
+	  ocorrencias:=ocorrencias+1;
+	end if;
+  end loop;	
+  return ocorrencias;
+end;
+$$ language plpgsql;
+
+9) Criar uma stored procedure para formatar uma data a partir do nome de uma cidade informado via parâmetro, o formato será:
+Rondonópolis, 28 de março de 2024
+create or replace function FData(P_Cidade varchar(50)) returns varchar(80) as
+$$
+declare dia varchar(2); mes varchar(2); ano varchar(4);
+        nome_mes varchar(15);
+begin
+ select to_char(current_date,'DD'),to_char(current_date,'MM'),
+ to_char(current_date,'YYYY') into dia, mes, ano;
+ case mes::numeric
+   when 1 then nome_mes:='Janeiro';   when 2 then nome_mes:='Fevereiro';
+   when 3 then nome_mes:='Março';     when 4 then nome_mes:='Abril';
+   when 5 then nome_mes:='Maio';      when 6 then nome_mes:='Junho';
+   when 7 then nome_mes:='Julho';     when 8 then nome_mes:='Agosto';
+   when 9 then nome_mes:='Setembro';  when 10 then nome_mes:='Outubro';
+   when 11 then nome_mes:='Novembro'; when 12 then nome_mes:='Dezembro';
+ end case;
+ return P_Cidade||', '||dia||' de '||nome_mes||' de '||ano;
+end;
+$$ language plpgsql;
