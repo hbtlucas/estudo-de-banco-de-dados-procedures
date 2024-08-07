@@ -1,0 +1,33 @@
+1) Criar uma stored procedure para apresentar os nomes e datas de
+nascimento de clientes em um período de datas(inicial e final) (P).
+
+2) Criar uma stored procedure para apresentar os nomes e
+nascimentos de clientes classificados por ano, a implementação deverá
+apresentar os dados dos clientes subordinados aos respectivos anos de
+nascimento (P).
+
+3) Criar uma stored procedure para apresentar os títulos dos livros
+emprestados na data mais antiga e na data mais recente, crie dois
+cursores (P).
+
+4) Criar uma stored procedure para calcular substituir caracteres de
+um texto informado via parâmetro, o caracter para pesquisa e
+substituição também serão informados via parâmetro (F).
+
+5) Criar uma stored procedure para apresentar de forma hierárquica
+editoras e livros em ordem ascendente (P).
+
+6) Criar uma stored procedure para apresentar os produtos vendidos
+por faixas de valores, os valores serão informados por parâmetro (P).
+
+7) Criar uma stored procedure para apresentar os clientes em uma faixa
+etária determinada via parâmetros. Será apresentado o nome do cliente a data
+de nascimento e a idade do mesmo.
+
+8) Criar uma stored procedure para pesquisar a quantidade de ocorrências de
+uma palavra em um texto (F).
+
+9) Criar uma stored procedure para formatar uma data a partir do nome de
+uma cidade informado via parâmetro, o formato será:
+
+Usar current_date
