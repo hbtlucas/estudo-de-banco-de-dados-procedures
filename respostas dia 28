@@ -1,0 +1,133 @@
+
+```sql
+create or replace function
+pesquisar(texto varchar(50), car varchar(1))
+returns numeric as
+$$
+declare indice numeric(2);
+total numeric(3);
+begin
+total:=0;
+for indice in 1..length(texto)
+loop
+if (substring(texto,indice,1)=car)
+then total:=total+1;
+end if;
+end loop;
+return total;
+end;
+$$ language plpgsql;
+
+create table testeclientes(codigo numeric(5) primary key,
+nome varchar(50));
+
+create or replace procedure
+InserirClientes2(P_Nome varchar(50))
+language plpgsql as
+$$
+declare proximo numeric(5);
+begin
+insert into testeclientes(codigo, nome)
+values (P_codigo, P_Nome);
+end;
+$$
+
+call inserirclientes1(1,'Joao');
+
+create or replace procedure
+InserirClientes2(P_Nome varchar(50))
+language plpgsql as
+$$
+declare proximo numeric(5);
+begin
+select coalesce(max(tc.codigo),null,0)+1 into proximo
+from testeclientes tc;
+insert into testeclientes(codigo, nome)
+values (proximo, P_Nome);
+end;
+$$
+
+create table valores(id numeric(10) primary key,
+valor1 numeric(4,2), valor2 numeric(4,2),
+valor3 numeric(4,2));
+
+create or replace procedure PreencherValores
+(Quantidade numeric) language plpgsql as
+$$
+declare ultimo numeric(10);
+i numeric(10);
+begin
+select coalesce(max(v.id),null,0) into ultimo
+from valores v;
+
+for i in ultimo+1..Quantidade+ultimo
+loop
+insert into valores(id, valor1,valor2,valor3) values
+(i,random()*10,random()*10,random()*10);
+end loop;
+end;
+$$
+
+create or replace procedure ExibirEstados()
+language plpgsql as
+$$
+declare Cursor_Estados cursor is
+select e.nomeestado, e.sigla from estados e;
+begin
+for dados_estados in Cursor_Estados
+loop
+raise notice '% - %',dados_estados.nomeestado,
+dados_estados.sigla;
+end loop;
+end;
+$$
+
+create or replace procedure ExibirEstados()
+language plpgsql as
+$$
+declare Cursor_Estados cursor is
+select e.nomeestado, e.sigla from estados e;
+begin
+for dados_estados in Cursor_Estados
+loop
+raise notice '% - %',dados_estados.nomeestado,
+dados_estados.sigla;
+end loop;
+end;
+$$
+
+create or replace procedure ExibirEstados()
+language plpgsql as
+$$
+declare Cursor_Cidades cursor is select c.nomecidade
+from cidades c, estados e
+where c.idestado=e.idestado
+and e.sigla='MT';
+begin
+for dados_cidades in Cursor_Cidades
+loop
+raise notice '%',dados_cidades.nomecidade;
+end loop;
+end;
+$$
+
+create or replace procedure ExibirVendas(P_Codigo numeric(8))
+language plpgsql as
+$$
+declare Cursor_Vendas cursor is
+select pr.descricaoproduto, cl.nomecliente, vd.datavenda,
+ve.nomevendedor
+from vendas vd, produtos pr, clientes cl, vendedores ve
+where vd.idproduto=pr.idproduto
+and vd.idcliente=cl.idcliente
+and vd.idvendedor=ve.idvendedor
+and vd.idproduto=P_Codigo;
+begin
+for reg in Cursor_Vendas
+loop
+raise notice '%, %, %, %',reg.descricaoproduto,reg.nomecliente,
+reg.datavenda, reg.nomevendedor;
+end loop;
+end;
+$$
+```
